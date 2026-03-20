@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catering Resource</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3d872b',
+            secondary: '#617f55',
+            tertiary: '#f96565',
+            neutral: '#74796f',
+            white: '#ffffff',
+            status: {
+              good: '#3d872b',
+              soon: '#eab308',
+              expired: '#ef4444'
+            }
+          },
+          fontFamily: {
+            sans: ['Manrope', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      background-color: #f8f9fa; /* Very light neutral background */
+      color: #1f2937;
+    }
+    
+    /* Print Styles */
+    @media print {
+      body { background-color: white; }
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      .print-break-inside-avoid { page-break-inside: avoid; }
+      #root { padding: 0; margin: 0; }
+      .shadow-sm { box-shadow: none !important; }
+      .border-b { border-bottom: 2px solid black !important; }
+    }
+
+    /* Scrollbar styling for modal */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1; 
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #74796f; /* Using neutral */
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #617f55; /* Using secondary */
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-12 font-sans">
+
+  <header class="bg-white border-b border-neutral/20 sticky top-0 z-30 shadow-sm print:relative print:shadow-none">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 class="text-3xl font-bold flex items-center gap-2 text-primary">
+            <i data-lucide="building" class="w-7 h-7"></i> ASUO Catering Vendor Resource
+          </h1>
+          <p class="text-sm text-neutral mt-1">Browse and find approved or past vendors</p>
+        </div>
+        
+        <div class="flex items-center gap-3 no-print w-full md:w-auto">
+          <button onclick="requestUpdate()" class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition shadow-sm">
+            <i data-lucide="plus" class="w-4 h-4"></i> Submit Vendor
+          </button>
+          
+          <!--<input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleFileUpload(event)">
+          <button onclick="document.getElementById('csvFileInput').click()" class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-secondary/10 border border-secondary/20 text-secondary rounded-xl text-sm font-semibold hover:bg-secondary/20 transition" title="Load CSV from your computer if fetch fails">
+            <i data-lucide="upload" class="w-4 h-4"></i> Load Local CSV
+          </button>-->
+          
+          <button onclick="window.print()" class="flex items-center justify-center p-2 bg-white border border-neutral/20 rounded-xl text-neutral hover:bg-neutral/5 transition" title="Print / Save as PDF">
+            <i data-lucide="printer" class="w-5 h-5"></i>
+          </button>
+          <button onclick="exportCSV()" class="flex items-center justify-center p-2 bg-white border border-neutral/20 rounded-xl text-neutral hover:bg-neutral/5 transition" title="Export to CSV">
+            <i data-lucide="download" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <div class="flex flex-col gap-4 mb-8 no-print">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-tertiary">
+        <h2 class="text-xl font-bold flex items-center gap-2 mb-2 text-primary">
+          <i data-lucide="alert-circle" class="w-6 h-6 text-tertiary"></i> Important Guidelines
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+          <div>
+            <h3 class="font-bold flex items-center gap-2 mb-1 text-secondary">
+              <i data-lucide="clock" class="w-4 h-4"></i> W9 Expirations & Winter Term
+            </h3>
+            <p class="text-sm text-neutral">
+              Most W9s expire in <strong>Dec/Jan</strong> and only last yearly. Ensure extra time and care at the beginning and end of terms (especially Winter) to verify a vendor is actually available and approved before planning.
+            </p>
+          </div>
+          <div>
+            <h3 class="font-bold flex items-center gap-2 mb-1 text-secondary">
+              <i data-lucide="file-text" class="w-4 h-4"></i> Non-Standard Approvals
+            </h3>
+            <p class="text-sm text-neutral">
+              Certain vendors (e.g., <strong>Costco</strong>) do <em>not</em> accept Long-form POs, but you can still <strong>reimburse</strong> purchases using a Catering Waiver approved in advance.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <!--<div class="bg-secondary/5 p-4 rounded-xl border border-secondary/20 flex items-start gap-3">
+        <i data-lucide="info" class="w-5 h-5 text-secondary mt-0.5 flex-shrink-0"></i>
+        <div class="text-sm text-neutral">
+          <strong class="text-secondary">Need Help?</strong> We are actively collecting formal guidelines and disclaimers from Catering and SOFS. For direct questions on POs or waivers, please contact SOFS directly.
+        </div>
+      </div>-->
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-neutral/10 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center no-print">
+      
+      <div class="relative w-full md:w-96">
+        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral"></i>
+        <input 
+          id="searchInput"
+          type="text" 
+          placeholder="Search vendors..."
+          class="w-full pl-10 pr-4 py-2.5 bg-neutral/5 border-none rounded-xl focus:ring-2 focus:ring-primary focus:bg-white transition-all text-sm outline-none text-neutral"
+        >
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <div class="relative flex items-center bg-neutral/5 rounded-xl p-1 border border-neutral/10">
+          <i data-lucide="filter" class="w-3.5 h-3.5 text-neutral ml-2"></i>
+          <select 
+            id="filterSelect"
+            class="bg-transparent border-none text-sm font-medium text-neutral py-1.5 pl-2 pr-6 outline-none cursor-pointer appearance-none"
+          >
+            <option value="All">All Types</option>
+            <option value="Internal">Internal Only</option>
+            <option value="Internal">External Only</option> <!--FIX NOT IMPLEMENTED-->
+            <!--<option value="Catering">Catering</option> 
+            <option value="Merchandise">Merchandise</option>-->
+          </select>
+          <i data-lucide="chevron-down" class="absolute right-2 w-3.5 h-3.5 text-neutral pointer-events-none"></i>
+        </div>
+
+        <div class="relative flex items-center bg-neutral/5 rounded-xl p-1 border border-neutral/10">
+          <span class="text-xs text-neutral ml-3 font-medium uppercase tracking-wider">Sort:</span>
+          <select 
+            id="sortSelect"
+            class="bg-transparent border-none text-sm font-medium text-neutral py-1.5 pl-2 pr-6 outline-none cursor-pointer appearance-none"
+          >
+            <option value="completeness">Most Complete</option>
+            <option value="updated">Recently Updated</option>
+            <option value="alpha">Alphabetical</option>
+          </select>
+          <i data-lucide="chevron-down" class="absolute right-2 w-3.5 h-3.5 text-neutral pointer-events-none"></i>
+        </div>
+
+        <div class="flex bg-neutral/5 rounded-xl p-1 border border-neutral/10">
+          <button id="viewGridBtn" class="p-1.5 rounded-lg transition-colors bg-white shadow-sm text-primary">
+            <i data-lucide="layout-grid" class="w-4 h-4"></i>
+          </button>
+          <button id="viewListBtn" class="p-1.5 rounded-lg transition-colors text-neutral hover:text-primary">
+            <i data-lucide="list" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="print-break-inside-avoid">
+      
+      <div id="loadingIndicator" class="text-center py-12 text-neutral hidden">
+        Loading vendors from database...
+      </div>
+
+      <div id="activeSection" class="mb-10 hidden">
+        <h2 class="text-lg font-bold text-primary mb-4 flex items-center gap-2">
+          Approved & Active Vendors 
+          <span id="activeCount" class="text-sm font-medium bg-status-good/10 text-status-good px-2 py-0.5 rounded-full">0</span>
+        </h2>
+        <div id="activeContainer"></div>
+      </div>
+
+      <div id="expiredSection" class="mt-12 pt-8 border-t-2 border-dashed border-neutral/20 hidden">
+        <h2 class="text-lg font-bold text-neutral mb-4 flex items-center gap-2">
+          Expired Vendors 
+          <span id="expiredCount" class="text-sm font-medium bg-status-expired/10 text-status-expired px-2 py-0.5 rounded-full">0</span>
+        </h2>
+        <p class="text-sm text-neutral/80 mb-6 max-w-2xl">
+          These vendors may have expired W9s, Health Permits, or other documentation. To use them, please contact UO Catering and the vendor so they can upload renewed documentation.
+        </p>
+        <div id="expiredContainer"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="vendorModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral/80 backdrop-blur-sm hidden no-print">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+      <div class="sticky top-0 bg-white px-6 py-4 border-b border-neutral/10 flex justify-between items-center z-10">
+        <h2 id="modalTitle" class="text-2xl font-bold text-primary">Vendor Name</h2>
+        <button onclick="closeModal()" class="p-2 hover:bg-neutral/10 rounded-full transition-colors">
+          <i data-lucide="x" class="w-6 h-6 text-neutral"></i>
+        </button>
+      </div>
+      
+      <div class="p-6 space-y-6">
+        <div id="modalBadges" class="flex flex-wrap gap-3"></div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-4">
+            <div>
+              <h4 class="text-sm font-semibold text-neutral mb-1">Contact & Location</h4>
+              <div class="flex items-start gap-2 text-neutral">
+                <i data-lucide="map-pin" class="w-4 h-4 mt-0.5 flex-shrink-0"></i>
+                <span id="modalAddress">Address</span>
+              </div>
+            </div>
+            
+            <div>
+              <h4 class="text-sm font-semibold text-neutral mb-1">Compliance</h4>
+              <div class="space-y-2">
+                <div class="flex justify-between items-center text-sm border-b border-neutral/10 pb-1">
+                  <span class="text-neutral/80">Health Permit:</span> <!--FIX put exp. date or [none] here-->
+                  <span id="modalPermit" class="font-medium text-neutral"></span>
+                </div>
+                <div class="flex justify-between items-center text-sm border-b border-neutral/10 pb-1">
+                  <span class="text-neutral/80">Expiration Date:</span> <!--FIX put true last updated date here (below other info actually)-->
+                  <span id="modalExpDate" class="font-medium"></span>
+                </div>
+                <div class="flex justify-between items-center text-sm border-b border-neutral/10 pb-1">
+                  <span class="text-neutral/80">Approved Vendor:</span> <!--FIX should just be boolean yes/no-->
+                  <span id="modalApproved" class="font-medium text-neutral"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <h4 class="text-sm font-semibold text-neutral mb-1">Description & Tags</h4>
+              <p id="modalDescription" class="text-sm text-neutral bg-neutral/5 p-3 rounded-lg"></p>
+            </div>
+
+            <div id="modalNotesContainer" class="hidden">
+              <h4 class="text-sm font-semibold text-neutral mb-1">Special Notes</h4>
+              <div class="text-sm text-status-soon bg-status-soon/10 p-3 rounded-lg border border-status-soon/20 flex items-start gap-2">
+                <i data-lucide="alert-triangle" class="w-4 h-4 mt-0.5 flex-shrink-0"></i>
+                <p id="modalNotes"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-neutral/10 flex flex-wrap gap-4 justify-end">
+           <button onclick="requestUpdate()" class="px-4 py-2 text-sm font-semibold text-neutral bg-neutral/10 rounded-xl hover:bg-neutral/20 transition-colors">
+            Request Update
+          </button>
+          <button class="px-4 py-2 text-sm font-semibold text-white bg-primary rounded-xl shadow-sm hover:bg-primary/90 transition-colors">
+            Start PO / Waiver
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Application State ---
+    const state = {
+      vendors: [],
+      filteredActive: [],
+      filteredExpired: [],
+      search: '',
+      view: 'grid', // 'grid' | 'list'
+      sort: 'completeness', // 'completeness' | 'updated' | 'alpha'
+      filter: 'All' // 'All' | 'Internal' | 'Catering' | 'Merchandise'
+    };
+
+    // Initialize Icons
+    lucide.createIcons();
+
+    // --- DOM Elements ---
+    const activeSection = document.getElementById('activeSection');
+    const expiredSection = document.getElementById('expiredSection');
+    const activeContainer = document.getElementById('activeContainer');
+    const expiredContainer = document.getElementById('expiredContainer');
+    const activeCount = document.getElementById('activeCount');
+    const expiredCount = document.getElementById('expiredCount');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+
+    const searchInput = document.getElementById('searchInput');
+    const filterSelect = document.getElementById('filterSelect');
+    const sortSelect = document.getElementById('sortSelect');
+    const viewGridBtn = document.getElementById('viewGridBtn');
+    const viewListBtn = document.getElementById('viewListBtn');
+
+    // --- Utility Functions ---
+    function parseCSVLine(text) {
+      let result = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        let char = text[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    }
+
+    function calculateCompleteness(vendor, fields) {
+      let filled = 0;
+      fields.forEach(f => {
+        if (vendor[f] && vendor[f].toString().trim() !== '') filled++;
+      });
+      return (filled / fields.length) * 100;
+    }
+
+    function getExpirationStatus(dateStr) {
+      if (!dateStr || dateStr.toLowerCase() === 'n/a') return 'unknown';
+      const expDate = new Date(dateStr);
+      const today = new Date(); 
+      const diffTime = expDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays < 0) return 'expired';
+      if (diffDays <= 90) return 'soon';
+      return 'good';
+    }
+
+    // --- Data Loading & Processing ---
+    const fallbackCSV = `Organization,Health Permit,Expiration Date,Approved Vendor,Address,Notes
+541 Sushi Bar,Yes,12/31/2024,Yes,"898 Pearl St, Eugene, OR 97401",
+Abilities Diner and Bakery,Yes,12/31/2025,Yes,"790 Blair Blvd, Eugene, OR 97402",
+Atlas,Yes,12/31/2025,Yes,,"Listed as 3 separate suppliers on Duck Depot, unclear"
+Cafeto Coffee Company,Yes,6/30/2024,Yes,"4000 E 22nd Ave, Eugene, OR 97403",
+Chapala's Mexican Restaurant,Yes,12/31/2025,Yes,"68 W 29th Ave, Eugene, OR 97405",
+Costco,No,12/31/2023,No,"2828 Chad Dr, Eugene, OR 97408","Not an approved vendor, requires catering waiver."
+Newman's Fish Company,Yes,12/31/2025,Yes,"1545 Willamette St, Eugene, OR 97401",
+Nothing Bundt Cakes,Yes,6/30/2026,Yes,"1069 Valley River Way, Eugene, OR 97401",
+Pastini,Yes,12/31/2026,Yes,"Oakway Center, 325 Oakway Rd, Eugene, OR 97401",`;
+
+    async function initializeApp() {
+      try {
+        const response = await fetch('data.csv');
+        if (!response.ok) throw new Error("Could not find data.csv");
+        const csvText = await response.text();
+        processCSV(csvText);
+      } catch (error) {
+        console.warn("Could not fetch data.csv automatically. Using fallback.", error);
+        
+        loadingIndicator.innerHTML = `
+          <div class="text-status-soon mb-2 font-semibold">Could not automatically load data.csv</div>
+          <p class="text-sm text-neutral mb-4">Because you opened this file directly, your browser blocked the automatic load. Showing sample data.</p>
+          <button onclick="document.getElementById('csvFileInput').click()" class="px-4 py-2 bg-white border border-neutral/20 shadow-sm rounded-xl text-sm font-semibold text-secondary hover:bg-neutral/5">Upload your CSV manually</button>
+        `;
+        loadingIndicator.classList.remove('hidden');
+        
+        processCSV(fallbackCSV);
+      }
+    }
+
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const text = e.target.result;
+        processCSV(text);
+        loadingIndicator.classList.add('hidden');
+      };
+      reader.readAsText(file);
+    }
+
+    function processCSV(csvText) {
+      const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
+      if (lines.length < 2) return; 
+
+      const headers = parseCSVLine(lines[0]);
+      
+      state.vendors = lines.slice(1).map((line, index) => {
+        const values = parseCSVLine(line);
+        const vendor = {};
+        headers.forEach((h, i) => {
+          vendor[h] = values[i] || '';
+        });
+
+        vendor.id = `vendor-${index}`;
+        vendor.Type = vendor['Type'] || 'Catering'; 
+        vendor.Origin = vendor['Origin'] || (Math.random() > 0.8 ? 'Internal' : 'External');
+        vendor.Description = vendor['Description'] || "Provides options suitable for student organization events.";
+        vendor.Completeness = calculateCompleteness(vendor, headers);
+
+        const updatedDate = new Date();
+        updatedDate.setDate(updatedDate.getDate() - Math.floor(Math.random() * 60));
+        vendor.LastUpdated = updatedDate.toISOString().split('T')[0];
+
+        return vendor;
+      });
+
+      loadingIndicator.classList.add('hidden');
+      applyFiltersAndRender();
+    }
+
+    // --- Rendering Logic ---
+
+    function applyFiltersAndRender() {
+      let result = [...state.vendors];
+
+      if (state.search) {
+        const lowerSearch = state.search.toLowerCase();
+        result = result.filter(v => 
+          (v.Organization && v.Organization.toLowerCase().includes(lowerSearch)) || 
+          (v.Address && v.Address.toLowerCase().includes(lowerSearch)) ||
+          (v.Notes && v.Notes.toLowerCase().includes(lowerSearch))
+        );
+      }
+
+      if (state.filter !== 'All') {
+        if (state.filter === 'Internal') result = result.filter(v => v.Origin === 'Internal');
+        else result = result.filter(v => v.Type === state.filter);
+      }
+
+      result.sort((a, b) => {
+        if (state.sort === 'completeness') {
+          return b.Completeness - a.Completeness;
+        } else if (state.sort === 'updated') {
+          return new Date(b.LastUpdated) - new Date(a.LastUpdated);
+        } else if (state.sort === 'alpha') {
+          return a.Organization.localeCompare(b.Organization);
+        }
+        return 0;
+      });
+
+      state.filteredActive = [];
+      state.filteredExpired = [];
+      
+      result.forEach(v => {
+        if (getExpirationStatus(v['Expiration Date']) === 'expired') {
+          state.filteredExpired.push(v);
+        } else {
+          state.filteredActive.push(v);
+        }
+      });
+
+      renderUI();
+    }
+
+    function generateVendorCard(vendor, isExpired) {
+      const status = getExpirationStatus(vendor['Expiration Date']);
+      const compRounded = Math.round(vendor.Completeness);
+      
+      let iconHTML = '';
+      if (status === 'good') iconHTML = `<i data-lucide="check-circle" class="w-5 h-5 text-status-good"></i>`;
+      else if (status === 'soon') iconHTML = `<i data-lucide="clock" class="w-5 h-5 text-status-soon"></i>`;
+      else if (status === 'expired') iconHTML = `<i data-lucide="alert-triangle" class="w-5 h-5 text-status-expired"></i>`;
+
+      return `
+        <div onclick="openModal('${vendor.id}')" class="bg-white rounded-2xl p-5 border cursor-pointer transition-all duration-200 ${isExpired ? 'opacity-60 border-neutral/10 bg-neutral/5' : 'hover:shadow-md border-neutral/10'}">
+          <div class="flex justify-between items-start mb-3">
+            <h3 class="font-bold text-lg leading-tight w-3/4 ${isExpired ? 'text-neutral' : 'text-primary'}">
+              ${vendor.Organization}
+            </h3>
+            <div class="flex flex-col items-end">${iconHTML}</div>
+          </div>
+
+          <div class="space-y-2 mb-4 text-sm">
+             <div class="flex items-center text-neutral/80">
+               <span class="w-20 font-medium">Expires:</span>
+               <span class="font-semibold ${status === 'soon' ? 'text-status-soon' : status === 'expired' ? 'text-status-expired' : 'text-neutral'}">
+                 ${vendor['Expiration Date'] || 'N/A'}
+               </span>
+             </div>
+             <div class="flex items-center text-neutral/80">
+               <span class="w-20 font-medium">Permit:</span>
+               <span class="text-neutral">${vendor['Health Permit'] || 'N/A'}</span>
+             </div>
+             <div class="flex items-center text-neutral/80">
+               <span class="w-20 font-medium">Updated:</span>
+               <span class="text-neutral">${vendor.LastUpdated}</span>
+             </div>
+          </div>
+
+          <div class="pt-3 border-t border-neutral/10 flex items-center justify-between">
+            <div class="flex gap-1.5">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${isExpired ? 'bg-neutral/10 text-neutral' : 'bg-neutral/10 text-neutral'}">${vendor.Type}</span>
+              ${vendor.Origin === 'Internal' ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-secondary/10 text-secondary">Internal</span>` : ''}
+            </div>
+            
+            <div class="text-xs text-neutral/50 flex items-center gap-1" title="${compRounded}% Complete">
+              <div class="w-8 h-1.5 bg-neutral/10 rounded-full overflow-hidden">
+                <div class="h-full bg-tertiary" style="width: ${compRounded}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function generateVendorRow(vendor, isExpired) {
+      const status = getExpirationStatus(vendor['Expiration Date']);
+      const compRounded = Math.round(vendor.Completeness);
+      
+      let iconHTML = '';
+      if (status === 'good') iconHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-status-good"></i>`;
+      else if (status === 'soon') iconHTML = `<i data-lucide="clock" class="w-4 h-4 text-status-soon"></i>`;
+      else if (status === 'expired') iconHTML = `<i data-lucide="alert-triangle" class="w-4 h-4 text-status-expired"></i>`;
+
+      return `
+        <tr onclick="openModal('${vendor.id}')" class="border-b border-neutral/10 cursor-pointer transition-colors hover:bg-neutral/5 ${isExpired ? 'opacity-60 bg-neutral/5' : 'bg-white'}">
+          <td class="py-4 px-4">
+            <div class="font-semibold ${isExpired ? 'text-neutral' : 'text-primary'} flex items-center gap-2">
+              ${iconHTML}
+              ${vendor.Organization}
+            </div>
+            <div class="text-xs text-neutral/80 mt-1 flex items-center gap-2">
+              ${vendor.Type} &bull; ${vendor.Origin}
+            </div>
+          </td>
+          <td class="py-4 px-4 text-sm">
+            <span class="font-medium ${status === 'soon' ? 'text-status-soon' : status === 'expired' ? 'text-status-expired' : 'text-neutral'}">
+              ${vendor['Expiration Date'] || 'N/A'}
+            </span>
+          </td>
+          <td class="py-4 px-4 text-sm text-neutral max-w-xs truncate hidden md:table-cell">
+            ${vendor.Address || '-'}
+          </td>
+          <td class="py-4 px-4 text-sm hidden lg:table-cell">
+            <div class="flex items-center gap-2">
+              <div class="w-16 h-1.5 bg-neutral/10 rounded-full overflow-hidden">
+                <div class="h-full bg-tertiary" style="width: ${compRounded}%"></div>
+              </div>
+              <span class="text-xs text-neutral/80">${compRounded}%</span>
+            </div>
+          </td>
+          <td class="py-4 px-4 text-sm text-neutral/80 hidden sm:table-cell text-right">
+            ${vendor.LastUpdated}
+          </td>
+        </tr>
+      `;
+    }
+
+    function renderContainer(container, vendors, isExpired) {
+      if (vendors.length === 0) {
+        if (!isExpired) {
+          container.innerHTML = `
+            <div class="text-center py-12 bg-white rounded-2xl border border-dashed border-neutral/20">
+              <p class="text-neutral">No active vendors match your criteria.</p>
+            </div>
+          `;
+        } else {
+          container.innerHTML = '';
+        }
+        return;
+      }
+
+      if (state.view === 'grid') {
+        container.innerHTML = `
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            ${vendors.map(v => generateVendorCard(v, isExpired)).join('')}
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="${isExpired ? 'bg-white/50' : 'bg-white'} rounded-2xl shadow-sm border border-neutral/10 overflow-hidden">
+            <table class="w-full text-left border-collapse">
+              <thead class="bg-neutral/5 text-neutral text-xs uppercase font-semibold border-b border-neutral/10">
+                <tr>
+                  <th class="py-3 px-4">Organization</th>
+                  <th class="py-3 px-4">Expires</th>
+                  <th class="py-3 px-4 hidden md:table-cell">Address</th>
+                  <th class="py-3 px-4 hidden lg:table-cell">Profile</th>
+                  <th class="py-3 px-4 hidden sm:table-cell text-right">Updated</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${vendors.map(v => generateVendorRow(v, isExpired)).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+    }
+
+    function renderUI() {
+      activeSection.classList.remove('hidden');
+      if (state.filteredExpired.length > 0) {
+        expiredSection.classList.remove('hidden');
+      } else {
+        expiredSection.classList.add('hidden');
+      }
+
+      activeCount.innerText = state.filteredActive.length;
+      expiredCount.innerText = state.filteredExpired.length;
+
+      renderContainer(activeContainer, state.filteredActive, false);
+      renderContainer(expiredContainer, state.filteredExpired, true);
+
+      lucide.createIcons();
+    }
+
+    // --- Modal Logic ---
+
+    function openModal(vendorId) {
+      const vendor = state.vendors.find(v => v.id === vendorId);
+      if (!vendor) return;
+
+      const status = getExpirationStatus(vendor['Expiration Date']);
+      
+      document.getElementById('modalTitle').innerText = vendor.Organization;
+      document.getElementById('modalAddress').innerHTML = vendor.Address || '<span class="text-neutral/50 italic">No address on file</span>';
+      document.getElementById('modalPermit').innerText = vendor['Health Permit'] || 'N/A';
+      
+      const expEl = document.getElementById('modalExpDate');
+      expEl.innerText = vendor['Expiration Date'] || 'N/A';
+      expEl.className = `font-medium ${status === 'expired' ? 'text-status-expired' : status === 'soon' ? 'text-status-soon' : 'text-status-good'}`;
+      
+      document.getElementById('modalApproved').innerText = vendor['Approved Vendor'] || 'N/A';
+      document.getElementById('modalDescription').innerText = vendor.Description;
+
+      const notesContainer = document.getElementById('modalNotesContainer');
+      if (vendor.Notes) {
+        document.getElementById('modalNotes').innerText = vendor.Notes;
+        notesContainer.classList.remove('hidden');
+      } else {
+        notesContainer.classList.add('hidden');
+      }
+
+      // Badges
+      let badgesHTML = '';
+      if (status === 'expired') badgesHTML += `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-status-expired/10 text-status-expired border border-status-expired/20">Expired</span>`;
+      if (status === 'soon') badgesHTML += `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-status-soon/10 text-status-soon border border-status-soon/20">Expiring Soon</span>`;
+      if (status === 'good') badgesHTML += `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-status-good/10 text-status-good border border-status-good/20">Active</span>`;
+      
+      badgesHTML += `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-neutral/10 text-neutral border border-neutral/20">${vendor.Type}</span>`;
+      if (vendor.Origin === 'Internal') {
+          badgesHTML += `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-secondary/10 text-secondary border border-secondary/20">${vendor.Origin}</span>`;
+      } else {
+          badgesHTML += `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-neutral/10 text-neutral border border-neutral/20">${vendor.Origin}</span>`;
+      }
+      
+      document.getElementById('modalBadges').innerHTML = badgesHTML;
+      document.getElementById('vendorModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('vendorModal').classList.add('hidden');
+    }
+
+    document.getElementById('vendorModal').addEventListener('click', closeModal);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    // --- Event Listeners & Actions ---
+
+    searchInput.addEventListener('input', (e) => {
+      state.search = e.target.value;
+      applyFiltersAndRender();
+    });
+
+    filterSelect.addEventListener('change', (e) => {
+      state.filter = e.target.value;
+      applyFiltersAndRender();
+    });
+
+    sortSelect.addEventListener('change', (e) => {
+      state.sort = e.target.value;
+      applyFiltersAndRender();
+    });
+
+    viewGridBtn.addEventListener('click', () => {
+      state.view = 'grid';
+      viewGridBtn.classList.replace('text-neutral', 'text-primary');
+      viewGridBtn.classList.add('bg-white', 'shadow-sm');
+      viewGridBtn.classList.remove('hover:text-primary');
+      viewListBtn.classList.replace('text-primary', 'text-neutral');
+      viewListBtn.classList.remove('bg-white', 'shadow-sm');
+      viewListBtn.classList.add('hover:text-primary');
+      applyFiltersAndRender();
+    });
+
+    viewListBtn.addEventListener('click', () => {
+      state.view = 'list';
+      viewListBtn.classList.replace('text-neutral', 'text-primary');
+      viewListBtn.classList.add('bg-white', 'shadow-sm');
+      viewListBtn.classList.remove('hover:text-primary');
+      viewGridBtn.classList.replace('text-primary', 'text-neutral');
+      viewGridBtn.classList.remove('bg-white', 'shadow-sm');
+      viewGridBtn.classList.add('hover:text-primary');
+      applyFiltersAndRender();
+    });
+
+    function exportCSV() {
+      if (state.vendors.length === 0) return;
+      
+      const headers = Object.keys(state.vendors[0]).filter(k => k !== 'id' && k !== 'Completeness' && k !== 'LastUpdated');
+      const csvContent = [
+        headers.join(','),
+        ...state.vendors.map(v => headers.map(h => `"${(v[h] || '').toString().replace(/"/g, '""')}"`).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'vendor_tracking_list.csv';
+      link.click();
+    }
+
+    function requestUpdate() {
+        alert("This would open an email draft to the maintainer or a form to submit vendor updates.");
+    }
+
+    // --- Boot App ---
+    initializeApp();
+
+  </script>
+</body>
+</html>
